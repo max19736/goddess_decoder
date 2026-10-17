@@ -1,0 +1,2 @@
+# goddess_decoder
+Maplestory

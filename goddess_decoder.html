@@ -1,3 +1,4 @@
+html
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
@@ -5,14 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>女神 400 極速解碼器</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: #f4f6f9; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: sans-serif; background: #f4f6f9; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .box { max-width: 400px; width: 100%; background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); box-sizing: border-box; }
         h2 { text-align: center; margin-top: 0; color: #2c3e50; font-size: 22px; margin-bottom: 15px; }
         .status-box { background: #e3f2fd; padding: 18px; border: 1px solid #bee5eb; border-radius: 10px; font-weight: bold; color: #0c5460; text-align: center; margin-bottom: 20px; font-size: 18px; }
         .final-ans { background: #fff3cd; color: #856404; border-color: #ffeeba; font-size: 22px; font-weight: 900; animation: pulse 1s infinite alternate; }
         @keyframes pulse { from { box-shadow: 0 0 4px #ffc107; } to { box-shadow: 0 0 16px #ffc107; } }
         .btn-main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
-        .btn-click { padding: 20px 10px; font-size: 18px; font-weight: bold; color: #fff; border: none; border-radius: 10px; cursor: pointer; transition: background 0.1s; }
+        .btn-click { padding: 20px 10px; font-size: 18px; font-weight: bold; color: #fff; border: none; border-radius: 10px; cursor: pointer; }
         .btn-red { background: #dc3545; } .btn-red:hover { background: #bd2130; }
         .btn-green { background: #28a745; } .btn-green:hover { background: #218838; }
         .btn-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -23,10 +24,14 @@
         .badge { background: #fff; padding: 4px 8px; border-radius: 4px; font-size: 13px; font-family: monospace; border: 1px solid #e9ecef; color: #495057; }
         .history-box { font-size: 13px; color: #6c757d; border-top: 1px solid #dee2e6; margin-top: 15px; padding-top: 12px; }
         .history-item { margin-bottom: 4px; padding: 4px 8px; background: #f8f9fa; border-radius: 4px; border-left: 3px solid #6c757d; font-family: monospace; }
+        .image-section { max-width: 800px; width: 100%; display: flex; gap: 15px; margin-top: 25px; box-sizing: border-box; }
+        .img-container { flex: 1; background: #fff; padding: 10px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; }
+        .img-container span { font-size: 14px; font-weight: bold; color: #495057; margin-bottom: 8px; }
+        .img-container img { width: 100%; height: auto; border-radius: 6px; display: block; border: 1px solid #eee; }
+        @media (max-width: 600px) { .image-section { flex-direction: column; } }
     </style>
 </head>
 <body>
-
 <div class="box">
     <h2>女神 400 極速解碼器</h2>
     <div class="status-box" id="displayBox">計算中...</div>
@@ -40,49 +45,47 @@
     </div>
     <div id="remainCount" style="font-size: 13px; font-weight: bold; color: #495057; margin-top: 15px;">剩餘可能：21 種</div>
     <div class="list" id="ansBox"></div>
-    <div class="history-box">
-        <strong>歷史站位紀錄：</strong>
-        <div id="historyLog">暫無紀錄</div>
+    <div class="history-box"><strong>歷史站位紀錄：</strong><div id="historyLog">暫無紀錄</div></div>
+</div>
+
+<div class="image-section">
+    <div class="img-container">
+        <span>唱片星期對照表</span>
+        <img src="image_JTg2RV.png" alt="唱片星期對照表">
+    </div>
+    <div class="img-container">
+        <span>女神像碎片位置</span>
+        <img src="image_AeWu1U.png" alt="女神像碎片位置">
     </div>
 </div>
 
 <script>
     var historyList = new Array();
-
     function runFilter() {
         var validAnswers = new Array();
         for (var l = 0; l <= 5; l++) {
             for (var m = 0; m <= 5; m++) {
                 for (var r = 0; r <= 5; r++) {
                     if (l + m + r === 5) {
-                        var currentAns = String(l) + String(m) + String(r);
-                        var isMatchAllRecords = true;
+                        var currentAns = String(l) + String(m) + String(r); var isMatchAllRecords = true;
                         for (var i = 0; i < historyList.length; i++) {
-                            var record = historyList.at(i);
-                            var matchCount = 0;
+                            var record = historyList.at(i); var matchCount = 0;
                             if (currentAns.charAt(0) === record.l) matchCount++;
                             if (currentAns.charAt(1) === record.m) matchCount++;
                             if (currentAns.charAt(2) === record.r) matchCount++;
-                            if (matchCount !== record.h) {
-                                isMatchAllRecords = false;
-                                break;
-                            }
+                            if (matchCount !== record.h) { isMatchAllRecords = false; break; }
                         }
-                        if (isMatchAllRecords) {
-                            validAnswers.push(currentAns);
-                        }
+                        if (isMatchAllRecords) validAnswers.push(currentAns);
                     }
                 }
             }
         }
         renderUI(validAnswers);
     }
-
     function getNextTargetMove(remainAnswers) {
         if (remainAnswers.length === 0) return "DATA_ERROR";
         if (remainAnswers.length === 1) return "FINAL_" + remainAnswers.at(0);
         if (historyList.length === 0) return "500";
-
         var all21Moves = new Array();
         for (var l = 0; l <= 5; l++) {
             for (var m = 0; m <= 5; m++) {
@@ -91,42 +94,30 @@
                 }
             }
         }
-
-        var bestMove = "";
-        var minMaxRemaining = Infinity;
-
+        var bestMove = ""; var minMaxRemaining = Infinity;
         for (var i = 0; i < all21Moves.length; i++) {
-            var move = all21Moves.at(i);
-            var h0 = 0; var h1 = 0;
+            var move = all21Moves.at(i); var h0 = 0; var h1 = 0;
             for (var j = 0; j < remainAnswers.length; j++) {
-                var ans = remainAnswers.at(j);
-                var match = 0;
+                var ans = remainAnswers.at(j); var match = 0;
                 if (ans.charAt(0) === move.charAt(0)) match++;
                 if (ans.charAt(1) === move.charAt(1)) match++;
                 if (ans.charAt(2) === move.charAt(2)) match++;
-                if (match === 0) h0++;
-                if (match === 1) h1++;
+                if (match === 0) h0++; if (match === 1) h1++;
             }
             var worstCase = Math.max(h0, h1);
-            if (worstCase < minMaxRemaining) {
-                minMaxRemaining = worstCase;
-                bestMove = move;
-            }
+            if (worstCase < minMaxRemaining) { minMaxRemaining = worstCase; bestMove = move; }
         }
         return bestMove;
     }
-
     function clickHint(hintValue) {
         var currentPossibilities = new Array();
         for (var l = 0; l <= 5; l++) {
             for (var m = 0; m <= 5; m++) {
                 for (var r = 0; r <= 5; r++) {
                     if (l + m + r === 5) {
-                        var currentAns = String(l) + String(m) + String(r);
-                        var isMatch = true;
+                        var currentAns = String(l) + String(m) + String(r); var isMatch = true;
                         for (var i = 0; i < historyList.length; i++) {
-                            var rec = historyList.at(i);
-                            var mc = 0;
+                            var rec = historyList.at(i); var mc = 0;
                             if (currentAns.charAt(0) === rec.l) mc++;
                             if (currentAns.charAt(1) === rec.m) mc++;
                             if (currentAns.charAt(2) === rec.r) mc++;
@@ -137,76 +128,37 @@
                 }
             }
         }
-
         var activeMove = getNextTargetMove(currentPossibilities);
         if (activeMove.indexOf("FINAL_") === 0 || activeMove === "DATA_ERROR") return;
-
-        historyList.push({
-            l: activeMove.charAt(0),
-            m: activeMove.charAt(1),
-            r: activeMove.charAt(2),
-            h: hintValue
-        });
+        historyList.push({ l: activeMove.charAt(0), m: activeMove.charAt(1), r: activeMove.charAt(2), h: hintValue });
         runFilter();
     }
-
-    function popRecord() {
-        if (historyList.length > 0) {
-            historyList.pop();
-            runFilter();
-        }
-    }
-
+    function popRecord() { if (historyList.length > 0) { historyList.pop(); runFilter(); } }
     function renderUI(answers) {
-        var displayBox = document.getElementById("displayBox");
-        displayBox.className = "status-box";
+        var displayBox = document.getElementById("displayBox"); displayBox.className = "status-box";
         var nextMove = getNextTargetMove(answers);
-
-        if (nextMove === "DATA_ERROR") {
-            displayBox.innerText = "❌ 歷史提示衝突，請按「返回」！";
-        } else if (nextMove.indexOf("FINAL_") === 0) {
-            var code = nextMove.substring(6);
-            displayBox.className = "status-box final-ans";
+        if (nextMove === "DATA_ERROR") { displayBox.innerText = "❌ 歷史提示衝突，請按「返回」！"; }
+        else if (nextMove.indexOf("FINAL_") === 0) {
+            var code = nextMove.substring(6); displayBox.className = "status-box final-ans";
             displayBox.innerText = "🎉 最終密碼答案：[" + code.charAt(0) + ", " + code.charAt(1) + ", " + code.charAt(2) + "]";
         } else {
-            if (historyList.length === 0) {
-                displayBox.innerText = "🏃 開局請喊人站：[" + nextMove.charAt(0) + ", " + nextMove.charAt(1) + ", " + nextMove.charAt(2) + "]";
-            } else {
-                displayBox.innerText = "👉 請喊隊友改站：[" + nextMove.charAt(0) + ", " + nextMove.charAt(1) + ", " + nextMove.charAt(2) + "]";
-            }
+            if (historyList.length === 0) { displayBox.innerText = "🏃 開局請喊人站：[" + nextMove.charAt(0) + ", " + nextMove.charAt(1) + ", " + nextMove.charAt(2) + "]"; }
+            else { displayBox.innerText = "👉 請喊隊友改站：[" + nextMove.charAt(0) + ", " + nextMove.charAt(1) + ", " + nextMove.charAt(2) + "]"; }
         }
-
         document.getElementById("remainCount").innerText = "剩餘可能：" + answers.length + " 種";
-        var box = document.getElementById("ansBox");
-        box.innerHTML = "";
+        var box = document.getElementById("ansBox"); box.innerHTML = "";
         for (var i = 0; i < answers.length; i++) {
-            var item = answers.at(i);
-            var span = document.createElement("span");
-            span.className = "badge";
-            span.innerText = "(" + item.charAt(0) + ", " + item.charAt(1) + ", " + item.charAt(2) + ")";
-            box.appendChild(span);
+            var item = answers.at(i); var span = document.createElement("span");
+            span.className = "badge"; span.innerText = "(" + item.charAt(0) + ", " + item.charAt(1) + ", " + item.charAt(2) + ")"; box.appendChild(span);
         }
-
-        var logBox = document.getElementById("historyLog");
-        if (historyList.length === 0) {
-            logBox.innerText = "暫無紀錄";
-        } else {
-            logBox.innerHTML = "";
-            for (var k = 0; k < historyList.length; k++) {
-                var r = historyList.at(k);
-                var div = document.createElement("div");
-                div.className = "history-item";
-                div.innerText = "第 " + (k + 1) + " 次：[" + r.l + ", " + r.m + ", " + r.r + "] ➡️ " + (r.h === 1 ? "1個正確" : "不正確");
-                logBox.appendChild(div);
+        var logBox = document.getElementById("historyLog"); if (historyList.length === 0) { logBox.innerText = "暫無紀錄"; } else {
+            logBox.innerHTML = ""; for (var k = 0; k < historyList.length; k++) {
+                var r = historyList.at(k); var div = document.createElement("div"); div.className = "history-item";
+                div.innerText = "第 " + (k + 1) + " 次：[" + r.l + ", " + r.m + ", " + r.r + "] ➡️ " + (r.h === 1 ? "1個正確" : "不正確"); logBox.appendChild(div);
             }
         }
     }
-
-    function resetAll() {
-        historyList = new Array();
-        runFilter();
-    }
-
+    function resetAll() { historyList = new Array(); runFilter(); }
     resetAll();
 </script>
 </body>

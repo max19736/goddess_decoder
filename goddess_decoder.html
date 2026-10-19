@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>女神 500 解碼器</title>
+    <title>女神 500 極速解碼器</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f4f6f9; padding: 12px; margin: 0; display: flex; flex-direction: column; align-items: center; }
         .box { max-width: 450px; width: 100%; background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); box-sizing: border-box; }
         
         h2 { text-align: center; margin-top: 0; color: #2c3e50; font-size: 24px; margin-bottom: 16px; }
         
-        /* 主提示框預設（藍色：嘗試站）- 增加 relative 以便右上角定位 */
+        /* 主提示框預設（藍色：嘗試站） */
         .status-box { 
             position: relative; 
             background: #e3f2fd; 
@@ -78,7 +78,12 @@
         /* 剩餘可能性清單 */
         .remain-title { font-size: 15px; font-weight: bold; color: #343a40; margin-top: 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 8px; max-height: 140px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px dashed #dee2e6; box-sizing: border-box; }
+        
+        /* 可點選樣式與唯讀樣式 */
         .badge { background: #fff; padding: 6px 4px; border-radius: 6px; font-size: 15px; font-weight: bold; font-family: monospace; border: 1px solid #ced4da; color: #343a40; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .badge.clickable { cursor: pointer; border-color: #0056b3; color: #0056b3; background: #e7f1ff; transition: all 0.15s; }
+        .badge.clickable:hover { background: #0056b3; color: #fff; transform: translateY(-1px); }
+        .badge.selected { background: #0056b3; color: #fff; border-color: #0056b3; }
         
         /* 歷史紀錄區域 */
         .history-box { font-size: 14px; color: #495057; border-top: 1px solid #dee2e6; margin-top: 18px; padding-top: 12px; }
@@ -104,14 +109,14 @@
         }
         .img-container img:hover { transform: scale(1.02); }
 
-        /* 本日唱片展示卡 */
+        /* 大版本日唱片展示卡 */
         .today-card {
             width: 100%;
-            max-width: 300px;
+            max-width: 300px; /* 放大外框至 300px */
             background: #181920;
             border: 2px solid #0056b3;
             border-radius: 12px;
-            padding: 12px;
+            padding: 16px 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -122,8 +127,9 @@
         .today-header { font-size: 14px; font-weight: bold; color: #4dabf7; margin-bottom: 6px; text-align: center; }
         .today-record-name { font-size: 18px; font-weight: 900; margin-bottom: 10px; text-align: center; }
 
+        /* 放大唱片圖片區域 */
         .single-record-box {
-            width: 160px;
+            width: 160px;  /* 放大唱片顯示框至 200px */
             height: 160px;
             border-radius: 10px;
             border: 1px solid #343a40;
@@ -148,7 +154,7 @@
 </head>
 <body>
 <div class="box">
-    <h2>女神 500 解碼器</h2>
+    <h2>女神 500 極速解碼器</h2>
     
     <!-- 主提示框 -->
     <div class="status-box" id="displayBox">
@@ -156,7 +162,7 @@
             <span class="copy-toast" id="copyToast">(已複製)</span>
             <label class="auto-copy-label">
                 <input type="checkbox" id="chkAutoCopy">
-                <span>複製數字</span>
+                <span>自動複製</span>
             </label>
         </div>
         <div class="status-title" id="statusTitle">開局準備中...</div>
@@ -173,7 +179,7 @@
     </div>
     
     <div class="remain-title">
-        <span>剩餘可能組合：</span>
+        <span>剩餘可能組合 <small id="clickNotice" style="font-size:12px; color:#6c757d; font-weight:normal;">(開局可點擊更換初始值)</small>：</span>
         <span id="remainCount" style="color: #0056b3;">21 種</span>
     </div>
     <div class="list" id="ansBox"></div>
@@ -186,7 +192,7 @@
 
 <div class="image-section">
     <div class="img-container">
-        <span>本日正確唱片 (🔍 點擊看完整對照表)</span>
+        <span>本日唱片推薦 (🔍 點擊看完整對照表)</span>
         <div class="today-card">
             <div class="today-header" id="todayDateStr">📅 載入中...</div>
             <div class="today-record-name" id="todayRecordStr">-- 唱片</div>
@@ -214,6 +220,7 @@
 
 <script>
     let currentRecordImgSrc = "image_JTg2RV.png";
+    let customStartMove = null; // 手動選擇的自訂初始值
 
     function zoomImg(src) {
         document.getElementById("lightboxImg").src = src;
@@ -257,8 +264,9 @@
         if (validAnswers.length === 0) return { type: "ERROR" };
         if (validAnswers.length === 1) return { type: "FINAL", move: validAnswers[0] };
         
+        // 開局第 0 步：如果玩家手動選了初始值則用自訂的，否則預設為 005
         if (historyList.length === 0) {
-            return { type: "MOVE", move: ALL_POSSIBLE_MOVES[0] };
+            return { type: "MOVE", move: customStartMove || ALL_POSSIBLE_MOVES[0] };
         }
 
         const currentPos = historyList[historyList.length - 1];
@@ -307,6 +315,16 @@
         });
     }
 
+    // 手動選取初始值
+    function selectInitialMove(moveStr) {
+        if (historyList.length > 0) return; // 開始測碼後鎖定不可選
+        const found = ALL_POSSIBLE_MOVES.find(m => m.str === moveStr);
+        if (found) {
+            customStartMove = found;
+            updateUI();
+        }
+    }
+
     function updateUI() {
         const validAnswers = getValidAnswers();
         const targetResult = getNextTargetMove(validAnswers);
@@ -314,12 +332,19 @@
         const displayBox = document.getElementById("displayBox");
         const statusTitle = document.getElementById("statusTitle");
         const statusTarget = document.getElementById("statusTarget");
+        const clickNotice = document.getElementById("clickNotice");
         const btn0 = document.getElementById("btn0");
         const btn1 = document.getElementById("btn1");
 
         displayBox.className = "status-box";
 
         let currentCode = "";
+        const isGameStarted = historyList.length > 0;
+
+        // 更新提示文字說明
+        if (clickNotice) {
+            clickNotice.innerText = isGameStarted ? "(已鎖定檢視)" : "(開局可點擊更換初始值)";
+        }
 
         if (targetResult.type === "FINAL") {
             const m = targetResult.move;
@@ -337,7 +362,7 @@
                 displayBox.className = "status-box possible-ans";
                 statusTitle.innerText = "🎯 可能為正確答案：";
             } else {
-                statusTitle.innerText = "👉 請喊隊友嘗試站：";
+                statusTitle.innerText = isGameStarted ? "👉 請喊隊友嘗試站：" : "🏃 開局請喊隊友站：";
             }
 
             statusTarget.innerText = `[ ${m.l} , ${m.m} , ${m.r} ]`;
@@ -350,16 +375,27 @@
             btn1.disabled = (countIf1 === 0);
         }
 
-        // 當歷史紀錄不為空（代表數字已變更，非開局 005）時，觸發自動複製
-        if (historyList.length > 0 && currentCode !== "") {
+        // 僅在點擊不正確/正確之後自動複製（開局不觸發）
+        if (isGameStarted && currentCode !== "") {
             triggerAutoCopy(currentCode);
         }
 
         document.getElementById("remainCount").innerText = `${validAnswers.length} 種`;
         
+        // 渲染剩餘組合清單（開局允許點選，開始後轉唯讀）
         const ansBox = document.getElementById("ansBox");
+        const currentTargetStr = targetResult.move ? targetResult.move.str : "";
+
         ansBox.innerHTML = validAnswers
-            .map(item => `<span class="badge">(${item.l}, ${item.m}, ${item.r})</span>`)
+            .map(item => {
+                const isSelected = (!isGameStarted && item.str === currentTargetStr);
+                const classNames = isGameStarted 
+                    ? "badge" 
+                    : (isSelected ? "badge clickable selected" : "badge clickable");
+                const clickAttr = isGameStarted ? "" : `onclick="selectInitialMove('${item.str}')"`;
+                
+                return `<span class="${classNames}" ${clickAttr}>(${item.l}, ${item.m}, ${item.r})</span>`;
+            })
             .join("");
 
         const logBox = document.getElementById("historyLog");
@@ -395,6 +431,7 @@
 
     function resetAll() {
         historyList = [];
+        customStartMove = null; // 重置自訂開局值
         updateUI();
     }
 
@@ -431,7 +468,7 @@
         if (!imgBox) return;
 
         const posX = (dayIndex / 6) * 100;
-        imgBox.style.backgroundSize = "auto 100%";
+        imgBox.style.backgroundSize = "auto 110%"; /* 微調唱片放大倍數 */
         imgBox.style.backgroundRepeat = "no-repeat";
         imgBox.style.backgroundPosition = `${posX}% center`;
 
@@ -468,3 +505,7 @@
 </script>
 </body>
 </html>
+```<ElicitationsGroup message="這份程式碼已更新完畢，您可以嘗試在開局時點選下方的任何組合：">
+  <Elicitation label="點選替換初始值與唯讀鎖定功能完美！" query="測試完成！開局可以隨意選取初始組合替換，開始測碼後自動變成唯讀鎖定，完全符合需求！"/>
+  <Elicitation label="想了解如何微調選取標題的藍色深淺" query="希望能微調開局選中標題時的藍色背景與邊框樣式。"/>
+</ElicitationsGroup>

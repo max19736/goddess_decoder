@@ -3,40 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>女神 500 極速解碼器</title>
+    <title>女神 500 解碼器</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f4f6f9; padding: 12px; margin: 0; display: flex; flex-direction: column; align-items: center; }
         .box { max-width: 450px; width: 100%; background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); box-sizing: border-box; }
         
-        h2 { text-align: center; margin-top: 0; color: #2c3e50; font-size: 24px; margin-bottom: 12px; }
+        h2 { text-align: center; margin-top: 0; color: #2c3e50; font-size: 24px; margin-bottom: 16px; }
         
-        /* 模式切換區塊 (響應式防溢出) */
-        .mode-switch { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; font-size: 14px; font-weight: bold; color: #2c3e50; background: #f8f9fa; padding: 8px; border-radius: 8px; }
-        .mode-switch label { cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-        .mode-switch input[type="radio"] { width: 16px; height: 16px; cursor: pointer; }
+        /* 主提示框預設（藍色：嘗試站）- 增加 relative 以便右上角定位 */
+        .status-box { 
+            position: relative; 
+            background: #e3f2fd; 
+            padding: 20px 16px 16px; 
+            border: 1px solid #bee5eb; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            color: #0c5460; 
+            text-align: center; 
+            margin-bottom: 16px; 
+            transition: all 0.3s ease; 
+        }
+        
+        .status-title { font-size: 15px; color: #495057; margin-bottom: 8px; }
+        
+        /* 站位數字區域 */
+        .status-target { font-size: 32px; color: #0056b3; font-weight: 900; letter-spacing: 1px; margin: 4px 0; }
 
-        /* 主提示框 */
-        .status-box { background: #e3f2fd; padding: 16px 12px; border: 1px solid #bee5eb; border-radius: 12px; font-weight: bold; color: #0c5460; text-align: center; margin-bottom: 16px; }
-        .status-title { font-size: 15px; color: #495057; margin-bottom: 6px; }
-        .status-target { font-size: 28px; color: #0056b3; font-weight: 900; letter-spacing: 1px; }
-        
-        /* 最終答案特效 */
+        /* 右上角自動複製膠囊按鈕 */
+        .auto-copy-wrapper { 
+            position: absolute; 
+            top: 10px; 
+            right: 10px; 
+            display: flex; 
+            align-items: center; 
+            gap: 4px; 
+            font-size: 12px; 
+            font-weight: bold; 
+            color: #495057; 
+            background: rgba(255, 255, 255, 0.75); 
+            padding: 4px 8px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(0, 0, 0, 0.08); 
+            user-select: none; 
+            backdrop-filter: blur(4px); 
+        }
+        .auto-copy-wrapper input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; }
+        .auto-copy-label { cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .copy-toast { font-size: 11px; color: #28a745; font-weight: bold; opacity: 0; transition: opacity 0.2s; position: absolute; right: 0; top: -18px; white-space: nowrap; }
+        .copy-toast.show { opacity: 1; }
+
+        /* 可能為正確答案（綠色背景） */
+        .possible-ans { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .possible-ans .status-title { color: #155724; }
+        .possible-ans .status-target { color: #155724; }
+
+        /* 最終答案特效（金色閃爍） */
         .final-ans { background: #fff3cd; color: #856404; border-color: #ffeeba; animation: pulse 1s infinite alternate; }
-        .final-ans .status-target { color: #d39e00; font-size: 30px; }
+        .final-ans .status-title { color: #856404; }
+        .final-ans .status-target { color: #d39e00; font-size: 32px; }
         @keyframes pulse { from { box-shadow: 0 0 4px #ffc107; } to { box-shadow: 0 0 16px #ffc107; } }
         
         /* 操作按鈕網格 */
         .btn-main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-        .btn-click { padding: 16px 8px; font-size: 18px; font-weight: bold; color: #fff; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
-        .btn-red { background: #dc3545; } .btn-red:hover { background: #bd2130; }
-        .btn-green { background: #28a745; } .btn-green:hover { background: #218838; }
+        .btn-click { padding: 16px 8px; font-size: 18px; font-weight: bold; color: #fff; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s, opacity 0.2s; }
+        .btn-red { background: #dc3545; } .btn-red:hover:not(:disabled) { background: #bd2130; }
+        .btn-green { background: #28a745; } .btn-green:hover:not(:disabled) { background: #218838; }
+        .btn-click:disabled { background: #adb5bd !important; cursor: not-allowed; opacity: 0.5; }
         
         .btn-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .btn-sub { padding: 10px; font-size: 15px; font-weight: bold; color: #fff; background: #6c757d; border: none; border-radius: 6px; cursor: pointer; }
         .btn-sub:hover { background: #5a6268; }
         .btn-orange { background: #fd7e14; } .btn-orange:hover { background: #e06400; }
         
-        /* 剩餘可能性清單 (手機端 RWD 網格，避免跑版) */
+        /* 剩餘可能性清單 */
         .remain-title { font-size: 15px; font-weight: bold; color: #343a40; margin-top: 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 8px; max-height: 140px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px dashed #dee2e6; box-sizing: border-box; }
         .badge { background: #fff; padding: 6px 4px; border-radius: 6px; font-size: 15px; font-weight: bold; font-family: monospace; border: 1px solid #ced4da; color: #343a40; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
@@ -49,8 +88,51 @@
         .image-section { max-width: 850px; width: 100%; display: flex; gap: 15px; margin-top: 20px; box-sizing: border-box; }
         .img-container { flex: 1; min-width: 0; background: #fff; padding: 12px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; border: 1px solid #e9ecef; box-sizing: border-box; }
         .img-container span { font-size: 14px; font-weight: bold; color: #495057; margin-bottom: 8px; text-align: center; }
-        .img-container img { width: 100%; max-width: 400px; height: 160px; object-fit: contain; border-radius: 8px; display: block; background: #14141a; cursor: zoom-in; transition: transform 0.2s; }
+        
+        /* 放大女神像圖片設定 */
+        .img-container img { 
+            width: 100%; 
+            max-width: 100%; 
+            height: auto; 
+            max-height: 260px; 
+            object-fit: contain; 
+            border-radius: 8px; 
+            display: block; 
+            background: #14141a; 
+            cursor: zoom-in; 
+            transition: transform 0.2s; 
+        }
         .img-container img:hover { transform: scale(1.02); }
+
+        /* 本日唱片展示卡 */
+        .today-card {
+            width: 100%;
+            max-width: 300px;
+            background: #181920;
+            border: 2px solid #0056b3;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .today-header { font-size: 14px; font-weight: bold; color: #4dabf7; margin-bottom: 6px; text-align: center; }
+        .today-record-name { font-size: 18px; font-weight: 900; margin-bottom: 10px; text-align: center; }
+
+        .single-record-box {
+            width: 160px;
+            height: 160px;
+            border-radius: 10px;
+            border: 1px solid #343a40;
+            cursor: zoom-in;
+            background-color: #14141a;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            transition: transform 0.2s;
+        }
+        .single-record-box:hover { transform: scale(1.03); }
 
         /* 全螢幕遮罩 */
         .lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; cursor: zoom-out; }
@@ -58,29 +140,32 @@
 
         @media (max-width: 650px) {
             .image-section { flex-direction: column; }
-            .img-container img { height: auto; max-width: 100%; }
-            .status-target { font-size: 24px; }
+            .status-target { font-size: 26px; }
             .box { padding: 15px; }
+            .auto-copy-wrapper { top: 8px; right: 8px; font-size: 11px; padding: 3px 6px; }
         }
     </style>
 </head>
 <body>
 <div class="box">
     <h2>女神 500 解碼器</h2>
-    <div class="mode-switch">
-        <label><input type="radio" name="mode" value="strict" checked onchange="updateUI()"> ⚡ 實戰極速模式</label>
-        <label><input type="radio" name="mode" value="minimax" onchange="updateUI()"> 🧠 全域 Minimax</label>
-    </div>
     
-    <!-- 提示框結構獨立拆解 -->
+    <!-- 主提示框 -->
     <div class="status-box" id="displayBox">
+        <div class="auto-copy-wrapper">
+            <span class="copy-toast" id="copyToast">(已複製)</span>
+            <label class="auto-copy-label">
+                <input type="checkbox" id="chkAutoCopy">
+                <span>自動複製數字</span>
+            </label>
+        </div>
         <div class="status-title" id="statusTitle">開局準備中...</div>
         <div class="status-target" id="statusTarget">[- , - , -]</div>
     </div>
     
     <div class="btn-main-grid">
-        <button class="btn-click btn-red" onclick="clickHint(0)">不正確 (0個對)</button>
-        <button class="btn-click btn-green" onclick="clickHint(1)">1 個正確</button>
+        <button class="btn-click btn-red" id="btn0" onclick="clickHint(0)">不正確 (0個對)</button>
+        <button class="btn-click btn-green" id="btn1" onclick="clickHint(1)">1 個正確</button>
     </div>
     <div class="btn-sub-grid">
         <button class="btn-sub btn-orange" onclick="popRecord()">↩ 返回 (Z)</button>
@@ -101,12 +186,17 @@
 
 <div class="image-section">
     <div class="img-container">
-        <span>唱片星期對照表 (🔍 點擊可放大)</span>
-        <img 
-            src="image_JTg2RV.png" 
-            alt="唱片星期對照表" 
-            onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/max19736/goddess_decoder/main/image_JTg2RV.png';" 
-            onclick="zoomImg(this.src)">
+        <span>本日正確唱片 (🔍 點擊看完整對照表)</span>
+        <div class="today-card">
+            <div class="today-header" id="todayDateStr">📅 載入中...</div>
+            <div class="today-record-name" id="todayRecordStr">-- 唱片</div>
+            <div 
+                class="single-record-box" 
+                id="singleRecordImg" 
+                onclick="zoomImg(currentRecordImgSrc)"
+                title="點擊檢視完整星期對照表"
+            ></div>
+        </div>
     </div>
     <div class="img-container">
         <span>女神像碎片位置 (🔍 點擊可放大)</span>
@@ -123,6 +213,8 @@
 </div>
 
 <script>
+    let currentRecordImgSrc = "image_JTg2RV.png";
+
     function zoomImg(src) {
         document.getElementById("lightboxImg").src = src;
         document.getElementById("lightbox").style.display = "flex";
@@ -164,18 +256,19 @@
     function getNextTargetMove(validAnswers) {
         if (validAnswers.length === 0) return { type: "ERROR" };
         if (validAnswers.length === 1) return { type: "FINAL", move: validAnswers[0] };
-        if (historyList.length === 0) return { type: "MOVE", move: ALL_POSSIBLE_MOVES[0] };
+        
+        if (historyList.length === 0) {
+            return { type: "MOVE", move: ALL_POSSIBLE_MOVES[0] };
+        }
 
-        const mode = document.querySelector('input[name="mode"]:checked').value;
-        const candidates = (mode === "strict") ? validAnswers : ALL_POSSIBLE_MOVES;
         const currentPos = historyList[historyList.length - 1];
 
         let bestMove = null;
         let minMaxRemaining = Infinity;
         let minDistance = Infinity;
 
-        for (let i = 0; i < candidates.length; i++) {
-            const candidateMove = candidates[i];
+        for (let i = 0; i < validAnswers.length; i++) {
+            const candidateMove = validAnswers[i];
             let h0 = 0, h1 = 0;
 
             for (let j = 0; j < validAnswers.length; j++) {
@@ -197,6 +290,23 @@
         return { type: "MOVE", move: bestMove };
     }
 
+    // 複製純數字
+    function triggerAutoCopy(codeStr) {
+        const chkAutoCopy = document.getElementById("chkAutoCopy");
+        if (!chkAutoCopy || !chkAutoCopy.checked) return;
+
+        navigator.clipboard.writeText(codeStr).then(() => {
+            const toast = document.getElementById("copyToast");
+            if (toast) {
+                toast.innerText = `(已複製 ${codeStr})`;
+                toast.classList.add("show");
+                setTimeout(() => toast.classList.remove("show"), 1500);
+            }
+        }).catch(err => {
+            console.error("自動複製失敗：", err);
+        });
+    }
+
     function updateUI() {
         const validAnswers = getValidAnswers();
         const targetResult = getNextTargetMove(validAnswers);
@@ -204,21 +314,45 @@
         const displayBox = document.getElementById("displayBox");
         const statusTitle = document.getElementById("statusTitle");
         const statusTarget = document.getElementById("statusTarget");
+        const btn0 = document.getElementById("btn0");
+        const btn1 = document.getElementById("btn1");
 
         displayBox.className = "status-box";
 
-        if (targetResult.type === "ERROR") {
-            statusTitle.innerText = "❌ 歷史提示衝突";
-            statusTarget.innerText = "請按「返回」重新檢查！";
-        } else if (targetResult.type === "FINAL") {
+        let currentCode = "";
+
+        if (targetResult.type === "FINAL") {
             const m = targetResult.move;
             displayBox.className = "status-box final-ans";
-            statusTitle.innerText = "🎉 最終正確密碼答案：";
+            statusTitle.innerText = "🎉 最後1組答案：";
             statusTarget.innerText = `[ ${m.l} , ${m.m} , ${m.r} ]`;
+            currentCode = `${m.l}${m.m}${m.r}`;
+            btn0.disabled = true;
+            btn1.disabled = true;
         } else {
             const m = targetResult.move;
-            statusTitle.innerText = historyList.length === 0 ? "🏃 開局請喊隊友站：" : "👉 請喊隊友改站：";
+            const hasHitCorrect = historyList.some(rec => rec.h === 1);
+
+            if (hasHitCorrect) {
+                displayBox.className = "status-box possible-ans";
+                statusTitle.innerText = "🎯 可能為正確答案：";
+            } else {
+                statusTitle.innerText = "👉 請喊隊友嘗試站：";
+            }
+
             statusTarget.innerText = `[ ${m.l} , ${m.m} , ${m.r} ]`;
+            currentCode = `${m.l}${m.m}${m.r}`;
+
+            const countIf0 = validAnswers.filter(ans => calculateMatchCount(ans, m) === 0).length;
+            const countIf1 = validAnswers.filter(ans => calculateMatchCount(ans, m) === 1).length;
+
+            btn0.disabled = (countIf0 === 0);
+            btn1.disabled = (countIf1 === 0);
+        }
+
+        // 當歷史紀錄不為空（代表數字已變更，非開局 005）時，觸發自動複製
+        if (historyList.length > 0 && currentCode !== "") {
+            triggerAutoCopy(currentCode);
         }
 
         document.getElementById("remainCount").innerText = `${validAnswers.length} 種`;
@@ -264,12 +398,72 @@
         updateUI();
     }
 
+    function updateTodayRecord() {
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 是星期日, 1-6 是星期一至六
+        const dayIndex = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
+        
+        const weekNames = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"];
+        const recordNames = [
+            "可愛的唱片 - 橘", 
+            "可怕的唱片 - 黃", 
+            "有趣的唱片 - 紫", 
+            "憂鬱的唱片 - 深藍", 
+            "冷淡的唱片 - 淺藍", 
+            "乾淨的唱片 - 綠", 
+            "傑出的唱片 - 紅"
+        ];
+        const recordColors = ["#ff922b", "#ffd43b", "#cc5de8", "#339af0", "#74c0fc", "#51cf66", "#ff6b6b"];
+        
+        const month = today.getMonth() + 1;
+        const date = today.getDate();
+        
+        const dateStrEl = document.getElementById("todayDateStr");
+        const recordStrEl = document.getElementById("todayRecordStr");
+        
+        if (dateStrEl) dateStrEl.innerText = `📅 今天 ${month}/${date} (${weekNames[dayIndex]})`;
+        if (recordStrEl) {
+            recordStrEl.innerText = recordNames[dayIndex];
+            recordStrEl.style.color = recordColors[dayIndex];
+        }
+        
+        const imgBox = document.getElementById("singleRecordImg");
+        if (!imgBox) return;
+
+        const posX = (dayIndex / 6) * 100;
+        imgBox.style.backgroundSize = "auto 100%";
+        imgBox.style.backgroundRepeat = "no-repeat";
+        imgBox.style.backgroundPosition = `${posX}% center`;
+
+        const localSrc = "image_JTg2RV.png";
+        const fallbackSrc = "https://raw.githubusercontent.com/max19736/goddess_decoder/main/image_JTg2RV.png";
+        
+        const testImg = new Image();
+        testImg.onload = function() {
+            currentRecordImgSrc = localSrc;
+            imgBox.style.backgroundImage = `url('${localSrc}')`;
+        };
+        testImg.onerror = function() {
+            currentRecordImgSrc = fallbackSrc;
+            imgBox.style.backgroundImage = `url('${fallbackSrc}')`;
+        };
+        testImg.src = localSrc;
+    }
+
     window.addEventListener("keydown", function(e) {
-        if (e.key === "0") clickHint(0);
-        else if (e.key === "1") clickHint(1);
-        else if (e.key.toLowerCase() === "z") popRecord();
+        const btn0 = document.getElementById("btn0");
+        const btn1 = document.getElementById("btn1");
+
+        if (e.key === "0" || e.code === "Numpad0" || e.code === "Digit0") {
+            if (!btn0.disabled) clickHint(0);
+        } else if (e.key === "1" || e.code === "Numpad1" || e.code === "Digit1") {
+            if (!btn1.disabled) clickHint(1);
+        } else if (e.key.toLowerCase() === "z") {
+            popRecord();
+        }
     });
 
+    updateTodayRecord();
     resetAll();
 </script>
 </body>
